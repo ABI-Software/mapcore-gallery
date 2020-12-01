@@ -1,17 +1,23 @@
 <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js App" />
+      <gallery :items="dataInput"/>
   </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import Gallery from './components/Gallery'
 
 export default {
   name: "App",
   components: {
-    HelloWorld
+    Gallery
+  },
+  data: function(){
+    return{
+      dataInput: [{name: 'test1', type: 'data'}]
+
+    }
   }
 };
 </script>
