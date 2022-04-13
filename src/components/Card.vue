@@ -1,14 +1,14 @@
 <template>
   <el-card :style="{ padding: '0px', maxWidth: width + 'rem' }" class="card">
     <div v-loading="!isReady">
-      <img :src="data.thumbnail" alt="thumbnail loading ..." />
+      <img :src="entry.thumbnail" alt="thumbnail loading ..." />
       <div v-if="false" class="image-overlay">
         <div
           class="triangle-right-corner"
           :style="`border-left-width: ${triangleHeight * 1.2}rem; border-top-width: ${triangleHeight}rem;`"
           @click="openLinkInNewTab"
         />
-        <el-tooltip class="item" :content="`View ${data.type}`" placement="left">
+        <el-tooltip class="item" :content="`View ${entry.type}`" placement="left">
           <img
             class="triangle-icon"
             :style="`height: ${triangleHeight * 0.25}rem;top: ${triangleHeight * 0.15}rem;right: ${triangleHeight * 0.15}rem`"
@@ -19,24 +19,32 @@
       </div>
       <div v-if="showCardDetails" class="details">
         <p>
-          <b>{{ data.type }}</b>
+          <b>{{ entry.type }}</b>
         </p>
-        <el-tooltip :content="data.title" placement="top">
+        <el-tooltip :content="entry.title" placement="top">
           <p class="title">
-            {{ data.title }}
+            {{ entry.title }}
           </p>
         </el-tooltip>
-        <el-button @click.prevent="openLinkInNewTab"> View {{ data.type }}</el-button>
+        <el-button @click.prevent="openLinkInNewTab"> View {{ entry.type }}</el-button>
       </div>
     </div>
   </el-card>
 </template>
 
 <script>
+import Vue from "vue";
+import { Card, Button, Tooltip, Loading } from "element-ui";
+
+Vue.use(Card)
+Vue.use(Button)
+Vue.use(Tooltip)
+Vue.use(Loading)
+
 export default {
   name: 'GalleryCard',
   props: {
-    data: {
+    entry: {
       type: Object,
       required: true,
     },
@@ -60,7 +68,7 @@ export default {
   },
   computed: {
     isReady() {
-      return this.data.title && this.data.thumbnail && this.data.link
+      return this.entry.title && this.entry.thumbnail && this.entry.link
     },
     imageHeight() {
       return this.showCardDetails ? this.height * 0.525 : this.height
@@ -81,7 +89,7 @@ export default {
   methods: {
     openLinkInNewTab() {
       const link = document.createElement('a')
-      link.href = this.data.link
+      link.href = this.entry.link
       link.target = '_blank'
       document.body.appendChild(link)
       link.click()

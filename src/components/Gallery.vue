@@ -6,8 +6,8 @@
       </a>
       <div class="filler" />
       <div class="card-line">
-        <span v-for="(item, index) in windowedItems" :key="'card_' + index" :class="['key-image-span', { active: isActive(index) }]">
-          <card :data="item" :width="cardWidth" :height="cardHeight" :show-card-details="showCardDetails" />
+        <span v-for="(item, index) in windowedItems" :key="'span_' + index" :class="['key-image-span', { active: isActive(index) }]">
+          <card v-if="item !== undefined" :key="'card_' + index" :entry="item" :width="cardWidth" :height="cardHeight" :show-card-details="showCardDetails" />
         </span>
       </div>
       <div class="filler" />
@@ -43,7 +43,7 @@ export default {
     },
     maxWidth: {
       type: Number,
-      required: true,
+      default: 3
     },
     cardWidth: {
       type: Number,

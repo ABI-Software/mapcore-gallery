@@ -15,7 +15,7 @@ export default {
   },
   data: function(){
     return{
-      dataInput: [{name: 'test1', type: 'data'}]
+      dataInput: [{name: 'test1', type: 'data'}, {name:'test2', type: 'data'}]
 
     }
   }
