@@ -4,53 +4,31 @@
       <a href="#" :class="['oval', 'prev', { disabled: !isPrevPossible }]" @click.prevent="goPrev">
         <span class="progress-button">&lsaquo;</span>
       </a>
-      <div class="filler"></div>
+      <div class="filler" />
       <div class="card-line">
-        <span
-          v-for="(item, index) in items"
-          :key="'card_' + index"
-          :style="{ display: displayState(index) }"
-          :class="['key-image-span', { active: isActive(index) }]"
-        >
-          <card :data="item" :width="cardWidth" :height="cardHeight" :show-card-details="showCardDetails" @view="onView" />
-          <!-- <nuxt-link  :style="`width: ${cardLineWidth}rem`"
-            v-slot="{ href }"
-            :to="{
-              name: getThumbnailLinkName(thumbnail_image),
-              params: getThumbnailLinkParams(thumbnail_image),
-              query: getThumbnailLinkQuery(thumbnail_image),
-            }"
-          >
-            <a target="_blank" :href="href" rel="noopener noreferrer">
-              <img
-                :ref="'key_image_' + thumbnail_image.id"
-                :src="thumbnail_image.img"
-                alt="thumbnail missing"
-                class="thumbnail thumbnail-100"
-                :height="slideNaturalHeight"
-                :width="slideNaturalWidth"
-              />
-            </a>
-          </nuxt-link> -->
-          <!-- <div class="overlay" :style="`background-color: ${imageOverlayColour(index)}`" /> -->
+        <span v-for="(item, index) in windowedItems" :key="'card_' + index" :class="['key-image-span', { active: isActive(index) }]">
+          <card :data="item" :width="cardWidth" :height="cardHeight" :show-card-details="showCardDetails" />
         </span>
       </div>
-      <div class="filler"></div>
+      <div class="filler" />
       <a href="#" :class="['oval', 'next', { disabled: !isNextPossible }]" @click.prevent="goNext">
         <span class="progress-button">&rsaquo;</span>
       </a>
     </div>
-    <div v-if="showIndicatorBar" class="bottom-spacer"></div>
-    <index-indicator v-if="showIndicatorBar" :count="itemCount" :current="currentIndex" />
+    <div v-if="canShowIndicatorBar" class="bottom-spacer" />
+    <index-indicator v-if="canShowIndicatorBar" :count="itemCount" :current="currentIndex" @clicked="indicatorClicked" />
   </div>
 </template>
 
 <script>
-import IndexIndicator from '@/components/IndexIndicator'
-import Card from '@/components/Card'
+import IndexIndicator from './IndexIndicator'
+import Card from './Card'
 
 function convertRemToPixels(rem) {
-  return rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
+  if (typeof window !== 'undefined') {
+    return rem * parseFloat(window.getComputedStyle(document.documentElement).fontSize)
+  }
+  return rem * 16
 }
 
 export default {
@@ -65,7 +43,11 @@ export default {
     },
     maxWidth: {
       type: Number,
-      default: 3,
+      required: true,
+    },
+    cardWidth: {
+      type: Number,
+      default: 13.8,
     },
     showIndicatorBar: {
       type: Boolean,
@@ -99,7 +81,6 @@ export default {
       currentIndex: 0,
       controlHeight: 2,
       controlWidth: 2,
-      cardWidth: 21,
     }
   },
   computed: {
@@ -122,31 +103,40 @@ export default {
     numberOfItemsVisible() {
       // The maximum width we are allowed minus two buttons for next and previous
       // divided by the width of a card.
-      const n = this.itemCount - 1
+      // const n = this.itemCount - 1
       const cardSpacingPx = convertRemToPixels(0.5)
       const buttonPx = convertRemToPixels(2)
       const cardWidthPx = convertRemToPixels(this.cardWidth)
-      let itemsVisibleRough = 1
-      let i = 0
-      while (i < n) {
-        const roomRequired = itemsVisibleRough * cardWidthPx + 2 * buttonPx + itemsVisibleRough * cardSpacingPx
-        if (roomRequired < this.maxWidth) {
-          itemsVisibleRough += 1
-        } else {
-          i = n
-        }
-        i += 1
+      const cardItems = (this.maxWidth - 2 * buttonPx - 2 * cardSpacingPx) / (1.1 * cardWidthPx)
+      return Math.floor(cardItems)
+    },
+    canShowIndicatorBar() {
+      const indicatorWidth = convertRemToPixels(1)
+      const indicatorAllowance = this.maxWidth / (indicatorWidth * this.itemCount)
+      return this.showIndicatorBar && indicatorAllowance > 0.1
+    },
+    valueAdjustment() {
+      const halfWindow = Math.floor(this.numberOfItemsVisible / 2)
+      let valueAdjust = this.currentIndex - halfWindow
+      if (valueAdjust < 0) {
+        valueAdjust = 0
+      } else if (valueAdjust + this.numberOfItemsVisible > this.itemCount) {
+        valueAdjust = this.itemCount - this.numberOfItemsVisible
       }
 
-      return itemsVisibleRough
+      return valueAdjust
+    },
+    windowedItems() {
+      let myArray = []
+      for (let i = 0; i < this.numberOfItemsVisible; i++) {
+        myArray.push(this.items[i + this.valueAdjustment])
+      }
+      return myArray
     },
   },
   methods: {
-    onView() {
-      console.log('view in viewer.')
-    },
     isActive(index) {
-      return this.currentIndex === index && this.highlightActive
+      return this.currentIndex - this.valueAdjustment === index && this.highlightActive
     },
     goNext() {
       this.currentIndex += 1
@@ -154,33 +144,10 @@ export default {
     goPrev() {
       this.currentIndex -= 1
     },
-    displayState(index) {
-      const oddImagesVisible = this.numberOfItemsVisible % 2 === 1
-      let halfVisible = this.numberOfItemsVisible / 2
-      if (oddImagesVisible) {
-        halfVisible = (this.numberOfItemsVisible - 1) / 2
+    indicatorClicked(index) {
+      if (this.currentIndex !== index) {
+        this.currentIndex = index
       }
-      let rawIndicies = [this.currentIndex]
-      for (let i = 1; i <= halfVisible; i++) {
-        rawIndicies.push(this.currentIndex + i)
-        rawIndicies.push(this.currentIndex - i)
-      }
-
-      if (!oddImagesVisible) {
-        rawIndicies.pop()
-      }
-      let indecies = []
-      for (let v of rawIndicies) {
-        if (v < 0) {
-          indecies.push(v + this.numberOfItemsVisible)
-        } else if (v >= this.itemCount) {
-          indecies.push(v - this.numberOfItemsVisible)
-        } else {
-          indecies.push(v)
-        }
-      }
-
-      return indecies.includes(index) ? undefined : 'none'
     },
   },
 }
@@ -195,6 +162,9 @@ export default {
   border: solid 1px var(--pale-grey);
   background-color: #ffffff;
   border-radius: 1rem;
+  display: flex;
+  justify-content: center;
+  user-select: none;
 }
 
 .gallery-strip,
@@ -229,12 +199,6 @@ export default {
 a.prev:not(.underline),
 a.next:not(.underline) {
   text-decoration: none;
-}
-a.prev {
-  justify-content: flex-start;
-}
-a.next {
-  justify-content: flex-end;
 }
 
 .disabled {

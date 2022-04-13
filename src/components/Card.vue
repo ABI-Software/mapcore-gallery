@@ -1,27 +1,33 @@
 <template>
-  <el-card :body-style="{ padding: '0px' }" class="card">
-    <img :src="data.thumbnail" alt="thumbnail missing" :style="`max-width: ${width}rem; height: ${imageHeight}rem`" />
-    <div class="image-overlay">
-      <div
-        class="triangle-right-corner"
-        :style="`border-left-width: ${triangleHeight * 1.2}rem; border-top-width: ${triangleHeight}rem;`"
-        @click="$emit('view')"
-      ></div>
-      <el-tooltip class="item" :content="`View ${data.type}`" placement="left">
-        <img
-          class="triangle-icon"
-          :style="`height: ${triangleHeight * 0.25}rem;top: ${triangleHeight * 0.15}rem;right: ${triangleHeight * 0.15}rem`"
-          :src="typeIcon"
-          @click="$emit('view')"
+  <el-card :style="{ padding: '0px', maxWidth: width + 'rem' }" class="card">
+    <div v-loading="!isReady">
+      <img :src="data.thumbnail" alt="thumbnail loading ..." />
+      <div v-if="false" class="image-overlay">
+        <div
+          class="triangle-right-corner"
+          :style="`border-left-width: ${triangleHeight * 1.2}rem; border-top-width: ${triangleHeight}rem;`"
+          @click="openLinkInNewTab"
         />
-      </el-tooltip>
-    </div>
-    <div v-if="showCardDetails" class="details" :style="`margin: ${marginDetails}rem`">
-      <p>
-        <b>{{ data.type }}</b
-        ><br />{{ data.title }}
-      </p>
-      <el-button @click.prevent="$emit('view')">View {{ data.type }}</el-button>
+        <el-tooltip class="item" :content="`View ${data.type}`" placement="left">
+          <img
+            class="triangle-icon"
+            :style="`height: ${triangleHeight * 0.25}rem;top: ${triangleHeight * 0.15}rem;right: ${triangleHeight * 0.15}rem`"
+            :src="typeIcon"
+            @click="openLinkInNewTab"
+          />
+        </el-tooltip>
+      </div>
+      <div v-if="showCardDetails" class="details">
+        <p>
+          <b>{{ data.type }}</b>
+        </p>
+        <el-tooltip :content="data.title" placement="top">
+          <p class="title">
+            {{ data.title }}
+          </p>
+        </el-tooltip>
+        <el-button @click.prevent="openLinkInNewTab"> View {{ data.type }}</el-button>
+      </div>
     </div>
   </el-card>
 </template>
@@ -48,12 +54,19 @@ export default {
   },
   data() {
     return {
+      ro: null,
       triangleSize: 4,
     }
   },
   computed: {
+    isReady() {
+      return this.data.title && this.data.thumbnail && this.data.link
+    },
     imageHeight() {
       return this.showCardDetails ? this.height * 0.525 : this.height
+    },
+    imageWidth() {
+      return this.width - 2 * this.marginDetails
     },
     triangleHeight() {
       return this.height * 0.237
@@ -62,31 +75,34 @@ export default {
       return this.height * 0.076
     },
     typeIcon() {
-      if (this.data.type == '3D Image') {
-        return require('@/assets/3d_image_icon.svg')
-      } else if (this.data.type == '3D Scaffold') {
-        return require('@/assets/scaffold_image_icon.svg')
-      }
-      return require('@/assets/2d_image_icon.svg')
+      return undefined
+    },
+  },
+  methods: {
+    openLinkInNewTab() {
+      const link = document.createElement('a')
+      link.href = this.data.link
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
     },
   },
 }
 </script>
 
 <style scoped>
-.card.old {
-  box-shadow: 0 0.125rem 0.75rem 0 rgba(0, 0, 0, 0.25);
-  border: solid 0.0625rem var(--pale-grey);
-  background-color: #ffffff;
-  display: inline-block;
-  position: relative;
-}
-
 .card {
   position: relative;
 }
 .details {
   text-align: left;
+}
+
+.title {
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 p.bold {
