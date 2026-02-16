@@ -74,39 +74,5 @@ export default {
       }
       return url
     },
-    getSegmentationThumbnailURL(apiEndpoint, info) {
-      let endpoint = `${apiEndpoint}/thumbnail/neurolucida`
-      endpoint = endpoint + `?datasetId=${info.datasetId}`
-      endpoint = endpoint + `&version=${info.datasetVersion}`
-      endpoint = endpoint + `&path=files/${info.segmentationFilePath}`
-      if (info.s3Bucket) {
-        endpoint = endpoint + `&s3BucketName=${info.s3Bucket}`
-      }
-      return endpoint
-    },
-    getThumbnailURLFromBiolucida(apiEndpoint, info) {
-      return `${apiEndpoint}/thumbnail/${info.id}`
-    },
-    getImageInfoFromBiolucida(apiEndpoint, items, info) {
-      const endpoint = `${apiEndpoint}/image/${info.id}`
-      const params = {}
-      this.getRequest(endpoint, params, 20000).then(
-        (response) => {
-          let item = items.find((x) => x.id === info.id)
-          const name = response.name
-          if (name) {
-            item.title = name
-          }
-        },
-        (reason) => {
-          if (reason.message.includes('timeout') && reason.message.includes('exceeded') && info.fetchAttempts < 3) {
-            info.fetchAttempts += 1
-            this.getImageInfoFromBiolucida(apiEndpoint, items, info)
-          }
-
-          return Promise.reject('Maximum iterations reached.')
-        }
-      )
-    },
   },
 }
